@@ -1,5 +1,5 @@
 # redis-monitor
-Redis Visual Monitor
+Redis Visual Monitoring
 
 ## Install required
 * JDK 6+
