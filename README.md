@@ -5,6 +5,7 @@ Redis Visual Monitor
 * JDK 6+
 * MySQL5
 * Redis
+
 ## How to config
 Mysql is required before using redis-monitor. First create a table named '**redis-monitor**'.
 You also can config the table name in *redis-monitor.properties* alternatively. Then alter the
