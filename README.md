@@ -48,4 +48,4 @@ then execute the command as follow:
     mvn clean package
 
 ## How to view
-If you deploy the war on localhost. Then visit *http://localhost:8080/index*
+If you deploy the war on the localhost. Then visit *http://localhost:8080/index*
