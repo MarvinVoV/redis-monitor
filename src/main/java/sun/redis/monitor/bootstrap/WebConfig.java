@@ -1,24 +1,26 @@
 package sun.redis.monitor.bootstrap;
 
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.config.annotation.*;
 
 import java.nio.charset.Charset;
 import java.util.List;
 
 /**
- * Created by root on 2015/10/30.
+ * Created by yamorn on 2015/10/30.
  * <p/>
  * '@Configuration' and '@EnableWebMvc' are equal to <mvc:annotation-driven/> in xml
  */
 @Configuration
-@Profile("container")
-@ComponentScan(basePackages = {"sun.redis.monitor"})
+@Profile("live")
+@ComponentScan(basePackages = {"sun.redis.monitor.controller"},
+        includeFilters = @ComponentScan.Filter(
+                type = FilterType.ANNOTATION,
+                classes = Controller.class
+        ))
 @Import(BeansConfig.class)
 @EnableWebMvc
 public class WebConfig extends WebMvcConfigurerAdapter {
@@ -50,9 +52,18 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         configurer.favorPathExtension(false).favorParameter(true);
     }
 
+    /**
+     * Can not override this method. It will cover the default converter setting.
+     * Use extendMessageConverters()
+     */
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(new StringHttpMessageConverter(Charset.forName("UTF-8")));
+        super.configureMessageConverters(converters);
     }
 
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        super.extendMessageConverters(converters);
+        converters.add(new StringHttpMessageConverter(Charset.forName("UTF-8")));
+    }
 }

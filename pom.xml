@@ -109,6 +109,14 @@
             <version>0.9.5</version>
         </dependency>
 
+        <!-- Utilities -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
+        </dependency>
+
+
         <!-- Servlet -->
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -138,6 +146,14 @@
     </dependencies>
 
     <build>
+        <finalName>redis-monitor</finalName>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.tomcat.maven</groupId>
@@ -147,6 +163,22 @@
                     <port>8080</port>
                     <path>/</path>
                     <uriEncoding>UTF-8</uriEncoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.juvenxu.portable-config-maven-plugin</groupId>
+                <artifactId>portable-config-maven-plugin</artifactId>
+                <version>1.1.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>replace-package</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <portableConfig>src/main/portable/product.xml</portableConfig>
                 </configuration>
             </plugin>
         </plugins>

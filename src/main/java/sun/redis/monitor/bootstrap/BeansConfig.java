@@ -2,27 +2,47 @@ package sun.redis.monitor.bootstrap;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.mchange.v2.c3p0.PooledDataSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Controller;
 import redis.clients.jedis.JedisPoolConfig;
+
+import javax.annotation.Resource;
 
 /**
  * Created by yamorn on 2015/10/30.
- *
+ * <p/>
  * Beans configuration
  */
 @Configuration
-@PropertySource({"classpath:redis.properties", "classpath:jdbc.properties"})
+@ComponentScan(
+        basePackages = {"sun.redis.monitor"},
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ANNOTATION,
+                value = Controller.class
+        ))
+@PropertySource({
+        "classpath:redis.properties",
+        "classpath:jdbc.properties",
+        "classpath:redis-monitor.properties"
+})
 public class BeansConfig {
-    @Autowired
+    @Resource
     Environment env;
+
+    /**
+     * Bean only required for @Value("{}") annotations.
+     * Remove this bean if you are not using @Value annotations for injecting properties
+     */
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertyPlaceholderConfigurer() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
 
     /**
      * Jedis

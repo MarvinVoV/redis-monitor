@@ -13,6 +13,8 @@ public class RedisInfoEntity {
      * Server Section
      */
     private String redisVersion;
+    private String os;  // Operating system hosting the Redis server
+    private int tcpPort;    // TCP/IP listen port
     private String archBits;  // Architecture (32 or 64 bits)
     private String multiplexingApi; // event loop mechanism used by Redis
     private String gccVersion;  // Version of the GCC compiler used to compile the Redis server
@@ -33,10 +35,10 @@ public class RedisInfoEntity {
      * Memory Section
      */
     private long usedMemory; // total number of bytes allocated by Redis using its allocator
-    private long usedMemoryHuman; // Human readable representation of previous value
+    private String usedMemoryHuman; // Human readable representation of previous value
     private long usedMemoryRss; // Number of bytes that Redis allocated as seen by the operating system (a.k.a resident set size). This is the number reported by tools such as top(1) and ps(1)
     private long usedMemoryPeak;//Peak memory consumed by Redis (in bytes)
-    private long usedMemoryPeakHuman; //  Human readable representation of previous value
+    private String usedMemoryPeakHuman; //  Human readable representation of previous value
     private long usedMemoryLua; //  Number of bytes used by the Lua engine
     /**
      * Stats  Section
@@ -44,6 +46,8 @@ public class RedisInfoEntity {
     private long totalConnectionsReceived; //  Total number of connections accepted by the server
     private long totalCommandsProcessed; //  Total number of commands processed by the server
     private long instantaneousOpsPerSec; // Number of commands processed per second
+    private long totalNetInputBytes;
+    private long totalNetOutputBytes;
     private long rejectedConnections; //  Number of connections rejected because of maxclients limit
     private long expiredKeys; // Total number of key expiration events
     private long evictedKeys; //Number of evicted keys due to maxmemory limit
@@ -52,21 +56,19 @@ public class RedisInfoEntity {
     private long pubsubChannels; // Global number of pub/sub channels with client subscriptions
     private long pubsubPatterns;//  Global number of pub/sub pattern with client subscriptions
     private long latestForkUsec; // Duration of the latest fork operation in microseconds
+
+    /**
+     * Cluster
+     */
+    private int clusterEnabled;
     /**
      * Replication Section
      */
     private String role; // master or slave
+    private int connectedSlaves;
     private String masterHost; // Host or IP address of the master
     private int masterPort; // Master listening TCP port
     private List<String> dbStatistics = new LinkedList<String>(); // dbXXX:
-
-    public long getUsedMemoryHuman() {
-        return usedMemoryHuman;
-    }
-
-    public void setUsedMemoryHuman(long usedMemoryHuman) {
-        this.usedMemoryHuman = usedMemoryHuman;
-    }
 
     public String getRedisVersion() {
         return redisVersion;
@@ -74,6 +76,22 @@ public class RedisInfoEntity {
 
     public void setRedisVersion(String redisVersion) {
         this.redisVersion = redisVersion;
+    }
+
+    public String getOs() {
+        return os;
+    }
+
+    public void setOs(String os) {
+        this.os = os;
+    }
+
+    public int getTcpPort() {
+        return tcpPort;
+    }
+
+    public void setTcpPort(int tcpPort) {
+        this.tcpPort = tcpPort;
     }
 
     public String getArchBits() {
@@ -172,6 +190,14 @@ public class RedisInfoEntity {
         this.usedMemory = usedMemory;
     }
 
+    public String getUsedMemoryHuman() {
+        return usedMemoryHuman;
+    }
+
+    public void setUsedMemoryHuman(String usedMemoryHuman) {
+        this.usedMemoryHuman = usedMemoryHuman;
+    }
+
     public long getUsedMemoryRss() {
         return usedMemoryRss;
     }
@@ -188,11 +214,11 @@ public class RedisInfoEntity {
         this.usedMemoryPeak = usedMemoryPeak;
     }
 
-    public long getUsedMemoryPeakHuman() {
+    public String getUsedMemoryPeakHuman() {
         return usedMemoryPeakHuman;
     }
 
-    public void setUsedMemoryPeakHuman(long usedMemoryPeakHuman) {
+    public void setUsedMemoryPeakHuman(String usedMemoryPeakHuman) {
         this.usedMemoryPeakHuman = usedMemoryPeakHuman;
     }
 
@@ -226,6 +252,22 @@ public class RedisInfoEntity {
 
     public void setInstantaneousOpsPerSec(long instantaneousOpsPerSec) {
         this.instantaneousOpsPerSec = instantaneousOpsPerSec;
+    }
+
+    public long getTotalNetInputBytes() {
+        return totalNetInputBytes;
+    }
+
+    public void setTotalNetInputBytes(long totalNetInputBytes) {
+        this.totalNetInputBytes = totalNetInputBytes;
+    }
+
+    public long getTotalNetOutputBytes() {
+        return totalNetOutputBytes;
+    }
+
+    public void setTotalNetOutputBytes(long totalNetOutputBytes) {
+        this.totalNetOutputBytes = totalNetOutputBytes;
     }
 
     public long getRejectedConnections() {
@@ -292,12 +334,28 @@ public class RedisInfoEntity {
         this.latestForkUsec = latestForkUsec;
     }
 
+    public int getClusterEnabled() {
+        return clusterEnabled;
+    }
+
+    public void setClusterEnabled(int clusterEnabled) {
+        this.clusterEnabled = clusterEnabled;
+    }
+
     public String getRole() {
         return role;
     }
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public int getConnectedSlaves() {
+        return connectedSlaves;
+    }
+
+    public void setConnectedSlaves(int connectedSlaves) {
+        this.connectedSlaves = connectedSlaves;
     }
 
     public String getMasterHost() {

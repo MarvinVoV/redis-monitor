@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<portable-config>
+    <config-file path="WEB-INF/classes/jdbc.properties">
+        <replace key="ds.url">jdbc:mysql://localhost:3306/test?characterEncoding=UTF-8</replace>
+        <replace key="ds.username">root</replace>
+        <replace key="ds.password">root</replace>
+    </config-file>
+    <config-file path="WEB-INF/classes/redis-monitor.properties">
+        <replace key="monitor.rate">30000</replace>
+    </config-file>
+    <config-file path="WEB-INF/classes/redis.properties">
+        <replace key="redis.hostName">192.168.17.129</replace>
+    </config-file>
+</portable-config>
