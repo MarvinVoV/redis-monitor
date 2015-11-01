@@ -180,7 +180,7 @@
             networkChart = ec.init(document.getElementById('network'));
             var option = {
                 title: {
-                    text: 'NetWrok',
+                    text: 'NetWork',
                     subtext: '状态'
                 },
                 tooltip: {
