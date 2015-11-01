@@ -367,7 +367,7 @@
     </div>
     <div class="right menu">
         <div class="item">
-            link
+            <a href="https://github.com/yamorn/redis-monitor">GitHub</a>
         </div>
     </div>
 </div>
