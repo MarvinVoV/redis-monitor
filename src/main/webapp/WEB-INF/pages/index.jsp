@@ -25,6 +25,36 @@
 
         var memoryChart, statChart, networkChart;
 
+        var holdData = [];
+
+        var Config = {
+            url: '<c:url value="/fetch"/>',
+            TimeSpan: {
+                REAL_TIME: 'REAL_TIME',
+                ONE_HOUR: 'ONE_HOUR',
+                TWO_HOUR: 'TWO_HOUR',
+                THREE_HOUR: 'THREE_HOUR',
+                FOUR_HOUR: 'FOUR_HOUR',
+                TODAY: 'FOUR_HOUR',
+                YESTERDAY: 'FOUR_HOUR'
+            }
+        };
+
+        var Data = {
+            memoryPeak: [],
+            memoryCur: [],
+            dateList: [],
+            cmdProcessed: [],
+            totalCnnRev: [],
+            totalNetIn: [],
+            totalNetOut: [],
+            expiredKeys: [],
+            evictedKeys: []
+        };
+
+        var timer;
+        var timeSpan = Config.TimeSpan.REAL_TIME;
+
         function drawMemoryChart(ec) {
             memoryChart = ec.init(document.getElementById('memory'));
             var option = {
@@ -50,7 +80,7 @@
                     {
                         type: 'value',
                         axisLabel: {
-                            formatter: '{value} kb'
+                            formatter: '{value} Mb'
                         }
                     }
                 ],
@@ -88,10 +118,10 @@
                     }
                 ],
 //                addDataAnimation:false,
-                animation:false
+                animation: false
             };
             memoryChart.setOption(option);
-            fetchServerData('memory');
+            layOut('memory');
         }
 
         function drawStatChart(ec) {
@@ -170,10 +200,10 @@
                         }
                     }
                 ],
-                animation:false
+                animation: false
             };
             statChart.setOption(option);
-            fetchServerData('stat');
+            layOut('stat');
         }
 
         function drawNetworkChart(ec) {
@@ -231,10 +261,10 @@
                         }
                     }
                 ],
-                animation:false
+                animation: false
             };
             networkChart.setOption(option);
-            fetchServerData('network');
+            layOut('network');
         }
 
 
@@ -245,34 +275,20 @@
                     'echarts/chart/bar'
                 ],
                 function (ec) {
-                    drawMemoryChart(ec);
-                    drawStatChart(ec);
-                    drawNetworkChart(ec);
+                    fetchServerData(ec, timeSpan, drawCharts);
 
-                    setInterval(function(){
-                        drawMemoryChart(ec);
-                        drawStatChart(ec);
-                        drawNetworkChart(ec);
-                    },5000);
+                    timer = setInterval(function () {
+                        fetchServerData(ec, timeSpan, drawCharts);
+                    }, 5000);
                 }
         );
 
+        function drawCharts(ec) {
+            drawMemoryChart(ec);
+            drawStatChart(ec);
+            drawNetworkChart(ec);
+        }
 
-        var Config = {
-            url: '<c:url value="/fetch"/>'
-        };
-
-        var Data = {
-            memoryPeak: [],
-            memoryCur: [],
-            dateList: [],
-            cmdProcessed: [],
-            totalCnnRev: [],
-            totalNetIn: [],
-            totalNetOut: [],
-            expiredKeys: [],
-            evictedKeys: []
-        };
 
         function clearData() {
             Data.memoryCur = [];
@@ -297,67 +313,98 @@
             return date.toString(dayFormat + ' ' + timeFormat);
         }
 
-        function fetchServerData(type) {
+        function layOut(type) {
+            if (!holdData.length) return;
             var option;
-            $.getJSON(Config.url, function (data) {
+            for (var i = 0; i < holdData.length; i++) {
+                var info = holdData[i].info;
+                var date = holdData[i].date;
+                Data.dateList.push(timeConvert(date));
+                Data.memoryPeak.push(info.usedMemoryPeak / (1024 * 1024));
+                Data.memoryCur.push(info.usedMemory / (1024 * 1024));
+                Data.cmdProcessed.push(info.totalCommandsProcessed);
+                Data.totalCnnRev.push(info.totalConnectionsReceived);
+                Data.totalNetIn.push(info.totalNetInputBytes / (1024));
+                Data.totalNetOut.push(info.totalNetOutputBytes / (1024));
+                Data.expiredKeys.push(info.expiredKeys);
+                Data.evictedKeys.push(info.evictedKeys);
+                if (i == holdData.length - 1) {
+                    $('#svr_memory').html(info.usedMemoryHuman);
+                    $('#svr_memory_peak').html(info.usedMemoryPeakHuman);
+                    $('#svr_cnn_clients').html(info.connectedClients);
+                    $('#svr_up_days').html(info.uptimeInDays);
+                    $('#svr_tcp_port').html(info.tcpPort);
+                    $('#svr_os').html(info.os);
+                    $('#svr_version').html(info.redisVersion);
+                    $('#svr_role').html(info.role);
+                }
+            }
+
+            switch (type) {
+                case "memory":
+                    option = memoryChart.getOption();
+                    option.xAxis[0].data = Data.dateList;
+                    option.series[0].data = Data.memoryPeak;
+                    option.series[1].data = Data.memoryCur;
+                    memoryChart.setOption(option);
+                    break;
+                case "stat":
+                    option = statChart.getOption();
+                    option.xAxis[0].data = Data.dateList;
+                    option.series[0].data = Data.cmdProcessed;
+                    option.series[1].data = Data.totalCnnRev;
+                    option.series[2].data = Data.expiredKeys;
+                    option.series[3].data = Data.evictedKeys;
+                    statChart.setOption(option);
+                    break;
+                case "network":
+                    option = networkChart.getOption();
+                    option.xAxis[0].data = Data.dateList;
+                    option.series[0].data = Data.totalNetIn;
+                    option.series[1].data = Data.totalNetOut;
+                    networkChart.setOption(option);
+                    break;
+            }
+        }
+
+        function fetchServerData(eChart, timeSpan, callback) {
+            $.getJSON(Config.url, {timeSpan: timeSpan}, function (data) {
                 if (!data) {
                     alert('no data');
                     return;
                 }
                 clearData();
-
-                for (var i = 0; i < data.length; i++) {
-                    var info = data[i].info;
-                    var date = data[i].date;
-                    Data.dateList.push(timeConvert(date));
-                    Data.memoryPeak.push(info.usedMemoryPeak / 1024);
-                    Data.memoryCur.push(info.usedMemory / 1024);
-                    Data.cmdProcessed.push(info.totalCommandsProcessed);
-                    Data.totalCnnRev.push(info.totalConnectionsReceived);
-                    Data.totalNetIn.push(info.totalNetInputBytes / (1024));
-                    Data.totalNetOut.push(info.totalNetOutputBytes / (1024));
-                    Data.expiredKeys.push(info.expiredKeys);
-                    Data.evictedKeys.push(info.evictedKeys);
-                    if (i == data.length - 1) {
-                        $('#svr_memory').html(info.usedMemoryHuman);
-                        $('#svr_memory_peak').html(info.usedMemoryPeakHuman);
-                        $('#svr_cnn_clients').html(info.connectedClients);
-                        $('#svr_up_days').html(info.uptimeInDays);
-                        $('#svr_tcp_port').html(info.tcpPort);
-                        $('#svr_os').html(info.os);
-                        $('#svr_version').html(info.redisVersion);
-                        $('#svr_role').html(info.role);
-                    }
-                }
-
-                switch (type) {
-                    case "memory":
-                        option = memoryChart.getOption();
-                        option.xAxis[0].data = Data.dateList;
-                        option.series[0].data = Data.memoryPeak;
-                        option.series[1].data = Data.memoryCur;
-                        memoryChart.setOption(option);
-                        break;
-                    case "stat":
-                        option = statChart.getOption();
-                        option.xAxis[0].data = Data.dateList;
-                        option.series[0].data = Data.cmdProcessed;
-                        option.series[1].data = Data.totalCnnRev;
-                        option.series[2].data = Data.expiredKeys;
-                        option.series[3].data = Data.evictedKeys;
-                        statChart.setOption(option);
-                        break;
-                    case "network":
-                        option = networkChart.getOption();
-                        option.xAxis[0].data = Data.dateList;
-                        option.series[0].data = Data.totalNetIn;
-                        option.series[1].data = Data.totalNetOut;
-                        networkChart.setOption(option);
-                        break;
-                }
-
+                holdData = data;
+                callback(eChart);
             });
         }
+
+        $(function () {
+            var progress = $('.ui.progress').progress({
+                percent: 0
+            });
+            $('.ui.menu a.item')
+                    .on('click', function () {
+                        $(this)
+                                .addClass('active')
+                                .siblings()
+                                .removeClass('active')
+                        ;
+                        timeSpan = $(this).attr('data-span');
+                        progress.progress('reset');
+                        $('.ui.basic.modal').modal('show');
+                        var innerTimer = setInterval(function () {
+                            progress.progress('increment', 5);
+                        }, 250);
+                        setTimeout(function () {
+                            clearTimeout(innerTimer);
+                            $('.ui.basic.modal').modal('hide');
+                        }, 5500);
+                    });
+
+
+
+        });
     </script>
 </head>
 <body>
@@ -440,9 +487,45 @@
     </div>
 </div>
 <div style="height:50px"></div>
+<div id="timeSpan" class="ui blue seven item menu">
+    <a href="javascript:void(0);" data-span="REAL_TIME" class="active item">
+        Real Time
+    </a>
+    <a href="javascript:void(0);" data-span="ONE_HOUR" class="item">
+        One Hour
+    </a>
+    <a href="javascript:void(0);" data-span="TWO_HOUR" class="item">
+        Two Hour
+    </a>
+    <a href="javascript:void(0);" data-span="THREE_HOUR" class="item">
+        Three Hour
+    </a>
+    <a href="javascript:void(0);" data-span="FOUR_HOUR" class="item">
+        Four Hour
+    </a>
+    <a href="javascript:void(0);" data-span="TODAY" class="item">
+        Today
+    </a>
+    <a href="javascript:void(0);" data-span="YESTERDAY" class="item">
+        Yesterday
+    </a>
+</div>
 <div id="memory" style="height:400px;"></div>
 <div id="stat" style="height:400px"></div>
 <div id="network" style="height:400px"></div>
 
+<div class="ui basic modal">
+    <div class="header">
+        Switch Modal
+    </div>
+    <div class="content">
+        <div class="ui progress success">
+            <div class="bar">
+                <div class="progress"></div>
+            </div>
+            <div class="label">data load...</div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

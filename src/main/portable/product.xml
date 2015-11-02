@@ -6,7 +6,7 @@
         <replace key="ds.password">root</replace>
     </config-file>
     <config-file path="WEB-INF/classes/redis-monitor.properties">
-        <replace key="monitor.rate">1800000</replace>
+        <replace key="monitor.rate">900000</replace>
     </config-file>
     <config-file path="WEB-INF/classes/redis.properties">
         <replace key="redis.hostName">192.168.218.44</replace>

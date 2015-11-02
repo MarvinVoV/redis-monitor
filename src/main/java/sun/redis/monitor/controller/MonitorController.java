@@ -4,8 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import sun.redis.monitor.domain.JsonEntity;
+import sun.redis.monitor.domain.TimeSpan;
 import sun.redis.monitor.service.GatherService;
 
 import java.util.List;
@@ -27,7 +29,7 @@ public class MonitorController {
     @RequestMapping(value = "/fetch", produces = {"application/json; charset=utf-8"})
     public
     @ResponseBody
-    List<JsonEntity> getInfoData() {
-        return gatherService.getDataList();
+    List<JsonEntity> getInfoData(@RequestParam(required = true) String timeSpan) {
+        return gatherService.getDataList(TimeSpan.valueOf(timeSpan));
     }
 }

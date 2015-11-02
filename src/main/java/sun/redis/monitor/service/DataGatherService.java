@@ -19,6 +19,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import sun.redis.monitor.domain.JsonEntity;
 import sun.redis.monitor.domain.RedisInfoEntity;
+import sun.redis.monitor.domain.TimeSpan;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -52,6 +53,9 @@ public class DataGatherService implements GatherService<List<JsonEntity>>, Initi
 
     @Value("${monitor.tableName:REDIS_MONITOR}")
     private String tableName;   // default REDIS_MONITOR
+
+    @Value("${monitor.pointLimit:100}")
+    private String pointLimit;
 
     public void destroy() throws Exception {
         if (timer != null) {
@@ -92,7 +96,7 @@ public class DataGatherService implements GatherService<List<JsonEntity>>, Initi
             int day = c.get(Calendar.DATE);
             c.set(Calendar.DATE, day - 2);
             String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.getTime());
-            String clearSql = "delete from " + tableName + " where time < '" + date +"'";
+            String clearSql = "delete from " + tableName + " where time < '" + date + "'";
             jdbcTemplate.update(clearSql);
         }
 
@@ -142,8 +146,34 @@ public class DataGatherService implements GatherService<List<JsonEntity>>, Initi
     }
 
 
-    public List<JsonEntity> getDataList() {
-        String sql = "SELECT INFO, TIME FROM " + tableName + " ORDER BY TIME ASC";
+    public List<JsonEntity> getDataList(TimeSpan timeSpan) {
+        String timeCriteria = "";
+        switch (timeSpan) {
+            case REAL_TIME:
+                // empty
+                break;
+            case ONE_HOUR:
+                timeCriteria = " where time > '" + getHourTimeAgo(1) + "' ";
+                break;
+            case TWO_HOUR:
+                timeCriteria = " where time > '" + getHourTimeAgo(2) + "' ";
+                break;
+            case THREE_HOUR:
+                timeCriteria = " where time > '" + getHourTimeAgo(3) + "' ";
+                break;
+            case FOUR_HOUR:
+                timeCriteria = " where time > '" + getHourTimeAgo(4) + "' ";
+                break;
+            case TODAY:
+                timeCriteria = " where time > '" + getZeroHourTime() + "' ";
+                break;
+            case YESTERDAY:
+                timeCriteria = " where time > '" + getYesterdayZeroHourTime() + "' ";
+                break;
+        }
+        String sql = "select t.info,t.time from ( select info, time from " + tableName + " " + timeCriteria
+                + " order by time desc " + " limit " + pointLimit + ") " + " as t " + " order by t.time asc";
+
         final ObjectMapper mapper = new ObjectMapper();
         return jdbcTemplate.query(sql, new RowMapper<JsonEntity>() {
             public JsonEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -162,4 +192,31 @@ public class DataGatherService implements GatherService<List<JsonEntity>>, Initi
             }
         });
     }
+
+    private String getHourTimeAgo(int hours) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR_OF_DAY, hours * (-1));
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime());
+    }
+
+    private String getZeroHourTime() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -1);
+        calendar.set(Calendar.HOUR, -12);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime());
+    }
+
+    private String getYesterdayZeroHourTime() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -2);
+        calendar.set(Calendar.HOUR, -12);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime());
+    }
+
 }
